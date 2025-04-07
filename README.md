@@ -11,7 +11,6 @@
 - 💖 **Save Favorite Ayahs**: Bookmark verses that speak to your heart.
 - 🗑️ **Remove Favorites**: Easily manage your saved ayahs.
 - 🕰️ **Timestamps**: Each favorite ayah shows when it was saved.
-- 🌗 **Dark Mode Support**: Enjoy a smooth experience, day or night.
 
 ---
 
