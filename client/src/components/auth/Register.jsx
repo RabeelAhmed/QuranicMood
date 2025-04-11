@@ -1,10 +1,14 @@
+// components/auth/Register.jsx
 import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast'; // ✅ Import toast
 import AuthContext from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import Button from '../common/Button';
 import Card, { CardHeader, CardBody, CardFooter } from '../common/Card';
 import LoadingSpinner from '../common/LoadingSpinner';
+import Input from '../common/Input';
+import Alert from '../common/Alert';
+
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -13,144 +17,117 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
-  const { name, email, password, confirmPassword } = formData;
-
   const [formError, setFormError] = useState('');
-
+  const { name, email, password, confirmPassword } = formData;
   const { register, isAuthenticated, loading, error, clearErrors } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
-      toast.success('Account created successfully! 🎉'); // ✅ Show success toast on registration
+      toast.success('Account created successfully! 🎉');
       navigate('/homepage');
     }
-
-    return () => {
-      clearErrors();
-    };
+    return () => clearErrors();
   }, [isAuthenticated, navigate, clearErrors]);
 
   useEffect(() => {
-    if (error) {
-      toast.error(error); // ✅ Show error toast
-    }
+    error && toast.error(error);
   }, [error]);
 
-  const onChange = (e) => {
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const onSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
     if (password !== confirmPassword) {
       const msg = 'Passwords do not match';
       setFormError(msg);
-      toast.error(msg); // ✅ Toast for mismatched password
-      return;
+      return toast.error(msg);
     }
 
     if (password.length < 6) {
       const msg = 'Password must be at least 6 characters';
       setFormError(msg);
-      toast.error(msg); // ✅ Toast for short password
-      return;
+      return toast.error(msg);
     }
 
-    await register({
-      name,
-      email,
-      password
-    });
+    await register({ name, email, password });
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner center size="lg" />;
 
   return (
-    <div className="max-w-md mx-auto my-8">
-      <Card>
-        <CardHeader>
-          <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">Register</h2>
+    <div className="max-w-md mx-auto my-8 px-4">
+      <Card className="transition-all duration-300 hover:shadow-xl dark:hover:shadow-gray-800">
+        <CardHeader className="border-b dark:border-gray-600">
+          <h2 className="text-3xl font-extrabold text-center text-gray-800 dark:text-gray-100 py-4">
+            Create Account
+          </h2>
         </CardHeader>
 
         <CardBody>
-          {(error || formError) && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <span className="block sm:inline">{error || formError}</span>
-            </div>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {formError && <Alert variant="error">{formError}</Alert>}
 
-          <form onSubmit={onSubmit}>
-            <div className="mb-4">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={name}
-                onChange={onChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
+            <Input
+              label="Full Name"
+              type="text"
+              name="name"
+              value={name}
+              onChange={handleChange}
+              autoComplete="name"
+              required
+            />
 
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={onChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
+            <Input
+              label="Email"
+              type="email"
+              name="email"
+              value={email}
+              onChange={handleChange}
+              autoComplete="email"
+              required
+            />
 
-            <div className="mb-4">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={password}
-                onChange={onChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters</p>
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              name="password"
+              value={password}
+              onChange={handleChange}
+              helperText="Minimum 6 characters"
+              required
+            />
 
-            <div className="mb-6">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={confirmPassword}
-                onChange={onChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
+            <Input
+              label="Confirm Password"
+              type="password"
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={handleChange}
+              required
+            />
 
-            <Button type="submit" variant="primary" className="w-full">
-              Register
+            <Button type="submit" variant="primary" className="w-full group">
+              <span className="group-hover:translate-x-2 transition-transform">
+                Get Started
+              </span>
             </Button>
           </form>
         </CardBody>
 
-        <CardFooter className="text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Already have an account? <Link to="/login" className="text-primary hover:underline">Login</Link>
+        <CardFooter className="pt-4 border-t dark:border-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Already registered?{' '}
+            <Link
+              to="/login"
+              className="text-primary-600 dark:text-primary-400 font-medium hover:underline hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+            >
+              Sign in here
+            </Link>
           </p>
         </CardFooter>
       </Card>
