@@ -1,87 +1,170 @@
-import { useEffect, useContext, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { useState, useContext } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
-import Button from '../components/common/Button';
+import MoodCard from '../components/mood/MoodCard';
+import VerseDisplay from '../components/mood/VerseDisplay';
+import { LoadingSpinner } from '../components/common/Loading';
+import ErrorState from '../components/common/ErrorState';
+import { toast } from 'react-hot-toast';
+import { getAyahByMood, addFavoriteAyah } from '../utils/api';
+
+const MOODS = [
+  { id: 'happy', label: 'Happy', emoji: '😊', color: 'bg-yellow-400' },
+  { id: 'sad', label: 'Sad', emoji: '😢', color: 'bg-blue-400' },
+  { id: 'anxious', label: 'Anxious', emoji: '😰', color: 'bg-teal-400' },
+  { id: 'angry', label: 'Angry', emoji: '😠', color: 'bg-red-400' },
+  { id: 'confused', label: 'Confused', emoji: '😕', color: 'bg-purple-400' },
+  { id: 'grateful', label: 'Grateful', emoji: '🤲', color: 'bg-accent-gold' },
+  { id: 'lonely', label: 'Lonely', emoji: '🙍', color: 'bg-gray-400' },
+  { id: 'hopeful', label: 'Hopeful', emoji: '🌱', color: 'bg-green-400' },
+];
 
 const HomePage = () => {
   const { isAuthenticated } = useContext(AuthContext);
-  const welcomeShown = useRef(false);
+  const [selectedMood, setSelectedMood] = useState(null);
+  const [verse, setVerse] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (isAuthenticated && !welcomeShown.current) {
-      toast.success('Welcome back! 😊');
-      welcomeShown.current = true;
+  const handleMoodSelect = async (mood) => {
+    if (!isAuthenticated) {
+      toast.error('Please login to get personalized verses');
+      return;
     }
-  }, [isAuthenticated]);
+
+    setSelectedMood(mood.id);
+    setLoading(true);
+    setError(null);
+    setVerse(null);
+
+    try {
+      const data = await getAyahByMood(mood.id);
+      
+      setVerse({
+        id: Date.now().toString(),
+        arabic: data.text || "Arabic text unavailable",
+        translation: data.translation !== data.text ? data.translation : "",
+        surahEnglish: data.reference || "Quran Reference",
+        surahNumber: 0,
+        ayahNumber: 0,
+      });
+
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to fetch verse. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setSelectedMood(null);
+    setVerse(null);
+    setError(null);
+  };
+
+  const handleSaveVerse = async (verseToSave) => {
+     try {
+      await addFavoriteAyah({
+        text: verseToSave.arabic,
+        reference: verseToSave.surahEnglish,
+        translation: verseToSave.translation || verseToSave.arabic,
+        mood: selectedMood
+      });
+     } catch (err) {
+         console.error("Error saving favorite:", err);
+         throw err;
+     }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="py-12 md:py-20">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Find <span className="text-primary">Quranic Guidance</span> Based on Your Mood
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            Discover relevant Quranic verses that provide comfort, guidance, and inspiration based on how you're feeling today.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            {isAuthenticated ? (
-              <Link to="/dashboard">
-                <Button variant="primary" className="px-8 py-3 text-lg">
-                  Go to Dashboard
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="primary" className="px-8 py-3 text-lg">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="outline" className="px-8 py-3 text-lg">
-                    Register
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-        
-        <div className="mt-16 grid md:grid-cols-3 gap-8">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:scale-105 transition duration-300 ease-in-out">
-            <div className="text-center mb-4">
-              <span className="text-4xl">🧠</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center mb-2">Share Your Mood</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-center">
-              Simply select how you're feeling, whether happy, sad, anxious, or peaceful.
-            </p>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:scale-105 transition duration-300 ease-in-out">
-            <div className="text-center mb-4">
-              <span className="text-4xl">📖</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center mb-2">Get Personalized Ayah</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-center">
-              Receive a Quranic verse that resonates with your current emotional state.
-            </p>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:scale-105 transition duration-300 ease-in-out">
-            <div className="text-center mb-4">
-              <span className="text-4xl">📝</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center mb-2">Track Your Journey</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-center">
-              Build a collection of your moods and the Quranic guidance you've received.
-            </p>
-          </div>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      
+      {/* Hero Section */}
+      <div className="text-center mb-16">
+        <motion.h1 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl md:text-6xl font-bold font-heading mb-6"
+        >
+          How are you <span className="text-gradient">feeling</span> today?
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
+        >
+          Select your mood to receive a personalized Quranic verse for guidance and comfort.
+        </motion.p>
       </div>
+
+      {/* Mood Grid */}
+      <AnimatePresence mode='wait'>
+        {!selectedMood && (
+             <motion.div 
+             key="grid"
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0, y: -20 }}
+             className="grid grid-cols-2 md:grid-cols-4 gap-6"
+           >
+             {MOODS.map((mood, index) => (
+               <motion.div
+                 key={mood.id}
+                 initial={{ opacity: 0, y: 20 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 transition={{ delay: index * 0.1 }}
+               >
+                 <MoodCard 
+                   mood={mood} 
+                   onClick={() => handleMoodSelect(mood)} 
+                 />
+               </motion.div>
+             ))}
+           </motion.div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+             <motion.div 
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+             >
+                 <LoadingSpinner />
+                 <p className="text-center text-gray-500 mt-4">Consulting the Quran for you...</p>
+             </motion.div>
+        )}
+
+        {/* Result State */}
+        {(verse || error) && !loading && (
+            <motion.div
+                key="result"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center"
+            >
+                {error ? (
+                    <ErrorState message={error} onRetry={() => handleMoodSelect({ id: selectedMood })} />
+                ) : (
+                    <VerseDisplay 
+                        verse={verse} 
+                        isAuthenticated={isAuthenticated}
+                        onSave={handleSaveVerse}
+                    />
+                )}
+                
+                <button 
+                    onClick={handleReset}
+                    className="mt-12 text-gray-500 hover:text-accent-gold transition-colors flex items-center gap-2"
+                >
+                    ← Choose another mood
+                </button>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

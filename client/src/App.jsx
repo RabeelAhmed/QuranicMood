@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { Toaster } from 'react-hot-toast'; // ✅ Import Toaster
+import { ThemeProvider } from './context/ThemeContext';
+import { Toaster } from 'react-hot-toast';
 
 // Layout components
-import Header from './components/layout/Header';
-import Footer from './components/layout/Footer';
+import Layout from './components/layout/Layout';
 
 // Page components
 import HomePage from './pages/HomePage';
@@ -15,45 +15,43 @@ import FavoritesPage from './pages/FavoritesPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow">
-            <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/homepage" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/favoritesayah" element={<FavoritesPage />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-
-        {/* ✅ Global Toaster component for toast notifications */}
-        <Toaster 
-          position="top-center" 
-          toastOptions={{
-            style: {
-              background: '#333',
-              color: '#fff',
-            },
-            success: {
+            </Route>
+          </Routes>
+          
+          <Toaster 
+            position="top-center" 
+            toastOptions={{
+              className: 'dark:bg-slate-800 dark:text-white',
               style: {
-                background: '#4BB543',
+                background: '#333',
+                color: '#fff',
               },
-            },
-            error: {
-              style: {
-                background: '#FF4F4F',
+              success: {
+                style: {
+                  background: '#10b981', // Emerald 500
+                },
               },
-            },
-          }}
-        />
-      </Router>
-    </AuthProvider>
+              error: {
+                style: {
+                  background: '#ef4444', // Red 500
+                },
+              },
+            }}
+          />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
